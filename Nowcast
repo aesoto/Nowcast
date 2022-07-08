@@ -1,0 +1,185 @@
+library(lubridate)
+library(bizdays)
+library(quantmod)
+library(tidyverse)
+library(highcharter)
+library(tidyquant)
+library(timetk)
+library(shinyWidgets)
+library(here)
+library(httr)
+library(jsonlite)
+library(xts)
+library(readxl)
+
+
+# Initial claims:
+fileName <- 'UI Claims - National - Weekly.csv'
+filePath <- paste0(here(), '/', fileName)
+
+UIclaims <- read.csv(file = filePath)
+UIclaims <- UIclaims[complete.cases(UIClaims), ]
+UIclaims <- UIclaims[1:5]
+UIclaims$date <- as.Date(with(UIclaims, paste(year, month, day_endofweek,sep="-")), "%Y-%m-%d")
+UIclaims <- UIclaims[c(6,4,5)]
+colnames(UIclaims)[2] <- 'initial'
+colnames(UIclaims)[3] <- 'continued'
+
+timeSeries <- xts(UIclaims[,c(2,3)], order.by = UIclaims$date)
+
+timeSeries <- window(timeSeries, start = '2022-01-01')
+
+#both
+zoo.timeSeries <- as.zoo(timeSeries)
+#set color scheme
+tsRainbow <- rainbow(ncol(zoo.timeSeries))
+# plot the overlayed series
+plot(x = zoo.timeSeries, ylab = "UI Claims", main = "UI Claims",
+     col = tsRainbow, screens = 1)
+# Set a legend in the upper left hand corner to match color to return series
+legend(x = "topleft", legend = c("Initial", "Continued"),
+       lty = 1,col = tsRainbow)
+# individual
+tsInitial <- timeSeries[ ,1]
+tsContinued <- timeSeries[ ,2]
+
+
+
+
+
+# Affinity
+fileName <- 'Affinity - National - Daily.csv'
+filePath <- paste0(here(), '/', fileName)
+
+spend <- read.csv(file = filePath)
+spend <- spend[complete.cases(spend), ]
+spendAll <- spend[c(1:3, 5, 24, 23, 27) ]
+spendAll$date <- as.Date(with(spendAll, paste(year, month, day, sep="-")), "%Y-%m-%d")
+spendAll <- spendAll[c(8, 4:7)]
+names(spendAll) <- c('date', 'all', '1Q', 'middle', '4Q')
+
+timeSeries <- xts(spendAll[ ,2:5], order.by = spendAll$date)
+timeSeries <- window(timeSeries, start = '2022-01-01')
+# Goal is to have a chart of these 4 things.  Not working with Zoo
+# try: https://blog.revolutionanalytics.com/2014/01/quantitative-finance-applications-in-r-plotting-xts-time-series.html
+zoo.timeSeries <- as.zoo(timeSeries)
+#set color scheme
+tsRainbow <- rainbow(ncol(zoo.timeSeries))
+# plot the overlayed series
+plot(x = zoo.timeSeries, ylab = "Spending", main = "Spending",
+     col = tsRainbow, screens = 1)
+# Set a legend in the upper left hand corner to match color to return series
+legend(x = "topleft", legend = c("All", "1Q", "middle", "4Q"),
+       lty = 1,col = tsRainbow)
+
+
+
+# Spend Mix
+spendMix <- spend[c(1:3, 6:8, 13, 10:11) ]
+spendMix$date <- as.Date(with(spendMix, paste(year, month, day, sep="-")), "%Y-%m-%d")
+spendMix <- spendMix[c(10, 4:9)]
+names(spendMix) <- c('date', 'AAP', 'ACF', 'AER', 'GEN', 'DUR', 'NONDUR')
+
+timeSeries <- xts(spendMix[ ,2:7], order.by = spendAll$date)
+timeSeries <- window(timeSeries, start = '2022-01-01')
+#both
+zoo.timeSeries <- as.zoo(timeSeries)
+#set color scheme
+tsRainbow <- rainbow(ncol(zoo.timeSeries))
+# plot the overlayed series
+plot(x = zoo.timeSeries, ylab = "Spending", main = "Spending",
+     col = tsRainbow, screens = 1)
+# Set a legend in the upper left hand corner to match color to return series
+legend(x = "topleft", legend = c("AAP", "ACF", "AER", "GEN", "DUR", "NONDUR"),
+       lty = 1,col = tsRainbow)
+
+
+
+# vacancies
+fileName <- 'Burning Glass - National - Weekly.csv'
+filePath <- paste0(here(), '/', fileName)
+
+vacancies <- read.csv(file = filePath)
+vacancies <- vacancies[complete.cases(vacancies), ]
+vacanciesAll <- vacancies[c(1:3, 4, 11, 14) ]
+vacanciesAll$date <- as.Date(with(vacanciesAll, paste(year, month, day_endofweek, sep="-")), "%Y-%m-%d")
+vacanciesAll <- vacanciesAll[c(7, 4:6)]
+names(vacanciesAll) <- c('date', 'all', 'lowlevel', 'highlevel')
+
+timeSeries <- xts(vacanciesAll[ ,2:4], order.by = vacanciesAll$date)
+timeSeries <- window(timeSeries, start = '2022-01-01')
+#both
+zoo.timeSeries <- as.zoo(timeSeries)
+#set color scheme
+tsRainbow <- rainbow(ncol(zoo.timeSeries))
+# plot the overlayed series
+plot(x = zoo.timeSeries, ylab = "Vacancies", main = "Vacancies",
+     col = tsRainbow, screens = 1)
+# Set a legend in the upper left hand corner to match color to return series
+legend(x = "topleft", legend = c("ALL", "lowlevel", "highlevel"),
+       lty = 1,col = tsRainbow)
+
+# vacancies mix
+vacanciesMix <- vacancies[c(1:3, 5:9) ]
+vacanciesMix$date <- as.Date(with(vacanciesMix, paste(year, month, day_endofweek, sep="-")), "%Y-%m-%d")
+vacanciesMix <- vacanciesMix[c(9, 4:8)]
+names(vacanciesMix) <- c('date', 'Manuf', 'Fincl', 'ProfSvcs', 'EdandHlth', 'Hosp')
+
+timeSeries <- xts(vacanciesMix[ ,2:6], order.by = vacanciesMix$date)
+timeSeries <- window(timeSeries, start = '2022-01-01')
+#both
+zoo.timeSeries <- as.zoo(timeSeries)
+#set color scheme
+tsRainbow <- rainbow(ncol(zoo.timeSeries))
+# plot the overlayed series
+plot(x = zoo.timeSeries, ylab = "Vacancies", main = "Vacancies",
+     col = tsRainbow, screens = 1)
+# Set a legend in the upper left hand corner to match color to return series
+legend(x = "topleft", legend = c("Manuf", "Fincl", "ProfSvcs", "EdandHlth", "Hosp"),
+       lty = 1,col = tsRainbow)
+
+
+fileName <- 'Employment - National - Weekly.csv'
+filePath <- paste0(here(), '/', fileName)
+
+employment <- read.csv(file = filePath)
+employment <- employment[complete.cases(employment), ]
+employmentAll <- employment[c(1:3, 4, 8, 9, 5) ]
+employmentAll$date <- as.Date(with(employmentAll, paste(year, month, day_endofweek, sep="-")), "%Y-%m-%d")
+employmentAll <- employmentAll[c(8, 4:7)]
+names(employmentAll) <- c('date', 'all', 'topQ', 'middle', 'bottomQ')
+
+timeSeries <- xts(employmentAll[ ,2:5], order.by = employmentAll$date)
+timeSeries <- window(timeSeries, start = '2022-01-01')
+#both
+zoo.timeSeries <- as.zoo(timeSeries)
+#set color scheme
+tsRainbow <- rainbow(ncol(zoo.timeSeries))
+# plot the overlayed series
+plot(x = zoo.timeSeries, ylab = "Employment", main = "Employment",
+     col = tsRainbow, screens = 1)
+# Set a legend in the upper left hand corner to match color to return series
+legend(x = "topleft", legend = c("ALL", "topQ", "middle", "bottomQ"),
+       lty = 1,col = tsRainbow)
+
+# employment mix
+employmentMix <- employment[c(1:3, 19, 23:27)]
+employmentMix$date <- as.Date(with(employmentMix, paste(year, month, day_endofweek, sep="-")), "%Y-%m-%d")
+employmentMix <- employmentMix[c(10, 4:9)]
+names(employmentMix) <- c('date', 'Retail', 'Food', 'Trans', 'ProfSvcs', 'EdandHlth', 'Hosp')
+
+timeSeries <- xts(employmentMix[ , 2:7], order.by = employmentMix$date)
+timeSeries <- window(timeSeries, start = '2022-01-01')
+#both
+zoo.timeSeries <- as.zoo(timeSeries)
+#set color scheme
+tsRainbow <- rainbow(ncol(zoo.timeSeries))
+# plot the overlayed series
+plot(x = zoo.timeSeries, ylab = "Employment", main = "Employment",
+     col = tsRainbow, screens = 1)
+# Set a legend in the upper left hand corner to match color to return series
+legend(x = "topleft", legend = c("Retail", "Food", 'Trans', "ProfSvcs", "EdandHlth", "Hosp"),
+       lty = 1,col = tsRainbow)
+
+
+
