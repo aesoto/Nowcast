@@ -1,0 +1,232 @@
+library(lubridate)
+library(bizdays)
+library(quantmod)
+library(tidyverse)
+library(highcharter)
+library(tidyquant)
+library(timetk)
+library(shinyWidgets)
+library(here)
+library(httr)
+library(jsonlite)
+library(xts)
+library(readxl)
+library(reshape2)
+options(scipen = 999)
+
+# Initial claims:
+setwd("~/AndresSoto/task1107/EconomicTracker-main/data")
+fileName <- 'UI Claims - National - Weekly.csv'
+
+UIclaims <- read.csv(fileName)
+UIclaims <- UIclaims[complete.cases(UIclaims), ]
+UIclaims <- UIclaims[1:5]
+UIclaims$date <- as.Date(with(UIclaims, paste(year, month, day_endofweek,sep="-")), "%Y-%m-%d")
+UIclaims <- UIclaims[c(6,4,5)]
+colnames(UIclaims)[2] <- 'initial'
+colnames(UIclaims)[3] <- 'continued'
+
+#######################  ggplot better
+
+trick1 <- UIclaims[,c(1,2)]
+trick1$type <- "Initial"
+colnames(trick1)[2] <- "value"
+
+trick2 <- UIclaims[c(1,3)]
+trick2$type <- "Continued"
+colnames(trick2)[2] <- "value"
+
+################################################################################
+df <- rbind(trick1, trick2)
+
+start <- '2022-01-01'
+
+df <- subset(df, df$date >= start)
+
+ggplot(df, aes(date, value, col = type)) +
+  geom_line(na.rm=TRUE, cex =0.75)  +
+  labs(title = "UI Claims", color = " ") +
+  ylab("UI Claims") +
+  xlab("Date") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+################################################################################
+
+# Affinity
+fileName <- 'Affinity - National - Daily.csv'
+
+spend <- read_csv(fileName, 
+                  col_types = cols(spend_all = col_number(), 
+                                   spend_all_incmiddle = col_number(), 
+                                   spend_all_q1 = col_number(), spend_all_q4 = col_number()))
+
+spend <- spend[complete.cases(spend), ]
+spendAll <- spend[c(1:3, 5, 24, 23, 27) ]
+spendAll$date <- as.Date(with(spendAll, paste(year, month, day, sep="-")), "%Y-%m-%d")
+spendAll <- spendAll[c(8, 4:7)]
+
+names(spendAll) <- c('date', 'All', '1Q', 'Middle', '4Q')
+
+data_long1 <- melt(spendAll,                                 # Apply melt function
+                   id.vars = c("date"))
+
+start <- '2022-01-01'
+
+data_long1 <- subset(data_long1, data_long1$date >= start)
+
+ggplot(data_long1, aes(date, value, col = variable)) +
+  geom_line(na.rm=TRUE, cex =0.75)  +
+  labs(title = "Spending", color = " ") +
+  ylab("Spending") +
+  xlab("Date") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+################################################################################
+
+
+
+
+# Spend Mix
+
+
+spend <- read_csv("Affinity - National - Daily.csv", 
+         col_types = cols(spend_aap = col_number(), 
+                          spend_acf = col_number(), spend_aer = col_number(), 
+                          spend_apg = col_number(), spend_durables = col_number(), 
+                          spend_nondurables = col_number(), 
+                          spend_grf = col_number(), spend_gen = col_number()))
+
+spendMix <- spend[c(1:3, 6:8, 13, 10:11) ]
+spendMix$date <- as.Date(with(spendMix, paste(year, month, day, sep="-")), "%Y-%m-%d")
+spendMix <- spendMix[c(10, 4:9)]
+names(spendMix) <- c('date', 'AAP', 'ACF', 'AER', 'GEN', 'DUR', 'NONDUR')
+
+data_long1 <- melt(spendMix,                                 # Apply melt function
+                   id.vars = c("date"))
+
+start <- '2022-01-01'
+
+data_long1 <- subset(data_long1, data_long1$date >= start)
+
+ggplot(data_long1, aes(date, value, col = variable)) +
+  geom_line(na.rm=TRUE, cex =0.75)  +
+  labs(title = "Spending", color = " ") +
+  ylab("Spending") +
+  xlab("Date") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+################################################################################
+
+
+
+
+
+# vacancies
+fileName <- 'Burning Glass - National - Weekly.csv'
+
+vacancies <- read.csv(fileName)
+vacancies <- vacancies[complete.cases(vacancies), ]
+vacanciesAll <- vacancies[c(1:3, 4, 11, 14) ]
+vacanciesAll$date <- as.Date(with(vacanciesAll, paste(year, month, day_endofweek, sep="-")), "%Y-%m-%d")
+vacanciesAll <- vacanciesAll[c(7, 4:6)]
+names(vacanciesAll) <- c('date', 'All', 'Low Level', 'High Level')
+
+data_long1 <- melt(vacanciesAll,                                 # Apply melt function
+                   id.vars = c("date"))
+
+start <- '2022-01-01'
+
+data_long1 <- subset(data_long1, data_long1$date >= start)
+
+ggplot(data_long1, aes(date, value, col = variable)) +
+  geom_line(na.rm=TRUE, cex =0.75)  +
+  labs(title = "Vacancies", color = " ") +
+  ylab("Vacancies") +
+  xlab("Date") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+################################################################################
+
+
+
+# vacancies mix
+
+vacanciesMix <- vacancies[c(1:3, 5:9) ]
+vacanciesMix$date <- as.Date(with(vacanciesMix, paste(year, month, day_endofweek, sep="-")), "%Y-%m-%d")
+vacanciesMix <- vacanciesMix[c(9, 4:8)]
+names(vacanciesMix) <- c('date', 'Manuf', 'Fincl', 'ProfSvcs', 'EdandHlth', 'Hosp')
+
+data_long1 <- melt(vacanciesMix,                                 # Apply melt function
+                   id.vars = c("date"))
+
+start <- '2022-01-01'
+
+data_long1 <- subset(data_long1, data_long1$date >= start)
+
+ggplot(data_long1, aes(date, value, col = variable)) +
+  geom_line(na.rm=TRUE, cex =0.75)  +
+  labs(title = "Vacancies", color = " ") +
+  ylab("Vacancies") +
+  xlab("Date") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+################################################################################
+
+fileName <- 'Employment - National - Weekly.csv'
+
+employment <- read.csv(fileName)
+employment <- employment[complete.cases(employment), ]
+employmentAll <- employment[c(1:3, 4, 8, 9, 5) ]
+employmentAll$date <- as.Date(with(employmentAll, paste(year, month, day_endofweek, sep="-")), "%Y-%m-%d")
+employmentAll <- employmentAll[c(8, 4:7)]
+names(employmentAll) <- c('date', 'All', 'Top Q', 'Middle', 'Bottom Q')
+
+data_long1 <- melt(employmentAll,                                 # Apply melt function
+                   id.vars = c("date"))
+
+start <- '2022-01-01'
+
+data_long1 <- subset(data_long1, data_long1$date >= start)
+
+ggplot(data_long1, aes(date, value, col = variable)) +
+  geom_line(na.rm=TRUE, cex =0.75)  +
+  labs(title = "Vacancies", color = " ") +
+  ylab("Vacancies") +
+  xlab("Date") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+
+
+# employment mix
+employmentMix <- employment[c(1:3, 19, 23:27)]
+employmentMix$date <- as.Date(with(employmentMix, paste(year, month, day_endofweek, sep="-")), "%Y-%m-%d")
+employmentMix <- employmentMix[c(10, 4:9)]
+names(employmentMix) <- c('date', 'Retail', 'Food', 'Trans', 'ProfSvcs', 'EdandHlth', 'Hosp')
+
+data_long1 <- melt(employmentMix,                                 # Apply melt function
+                   id.vars = c("date"))
+
+start <- '2022-01-01'
+
+data_long1 <- subset(data_long1, data_long1$date >= start)
+
+ggplot(data_long1, aes(date, value, col = variable)) +
+  geom_line(na.rm=TRUE, cex =0.75)  +
+  labs(title = "Vacancies", color = " ") +
+  ylab("Vacancies") +
+  xlab("Date") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+###################################################################################
+
+
+
+
+
+
+
+
+
